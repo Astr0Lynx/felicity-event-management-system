@@ -1,0 +1,46 @@
+Frontend URL: [Deploy to Vercel/Netlify and add URL here]
+Backend API URL: [Deploy to Render/Railway and add URL here]
+Database: MongoDB Atlas (Already configured)
+
+Instructions:
+1. Follow DEPLOYMENT_GUIDE.md for step-by-step deployment instructions
+2. Update this file with actual URLs after deployment
+3. Ensure admin account is seeded by running: npm run seed (in backend)
+
+Admin Login Credentials:
+Email: admin@felicity.iiit.ac.in
+Password: Password1234@felicityadmin
+
+Quick Deploy Commands:
+
+Backend (Local test before deploy):
+cd backend
+npm install
+npm run seed  # One time only
+npm start
+
+Frontend (Local test before deploy):
+cd frontend
+npm install
+npm run dev
+
+Production Environment Variables:
+
+Backend (.env):
+- MONGO_URL: mongodb+srv://guntesh6:Chidori@cluster0.y50o4yi.mongodb.net/?appName=Cluster0
+- PORT: 5000
+- FRONTEND_URL: [Your frontend URL, e.g., https://your-app.vercel.app]
+- ADMIN_EMAIL: admin@felicity.iiit.ac.in
+- ADMIN_PASSWORD: Password1234@felicityadmin
+- JWT_SECRET: MySecretKeyForJWT@23456789
+
+Frontend (.env):
+- VITE_API_URL: [Your backend URL]/api
+
+Deployment Checklist:
+[ ] Backend deployed to Render/Railway
+[ ] Admin account seeded
+[ ] Frontend deployed to Vercel/Netlify
+[ ] Frontend .env updated with backend URL
+[ ] Both services tested and working
+[ ] URLs updated in this file

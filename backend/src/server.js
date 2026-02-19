@@ -1,0 +1,40 @@
+import dotenv from "dotenv"
+dotenv.config();
+import express from "express"
+import cors from 'cors';
+
+import {connectDB} from "./config/db.js"
+import participantRoutes from "./routes/participantRoutes.js"
+import adminRoutes from "./routes/adminRoutes.js"
+import organizerRoutes from "./routes/organizerRoutes.js"
+import eventRoutes from "./routes/eventRoutes.js"
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+
+
+//middleware
+// Increase payload size limit for base64 images (default is 100kb)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+app.use(cors({
+    origin: process.env.FRONTEND_URL || '*', 
+    credentials: true //allow cookies/tokens
+}));
+
+app.use("/api/participants", participantRoutes);
+app.use("/api/admin", adminRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/organizer', organizerRoutes);
+
+
+app.get('/', (req, res) => {
+    res.json({ message: 'Event Management API is running!' });
+});
+
+connectDB().then(() => {
+    app.listen(PORT, () => {
+        console.log("Server started on port: ", PORT);
+    });
+});
