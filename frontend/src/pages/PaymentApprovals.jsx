@@ -47,8 +47,17 @@ export default function PaymentApprovals() {
       }));
     } catch (error) {
       console.error('Error loading payment proof:', error);
-      setMessage('Failed to load payment proof');
-      setMessageType('error');
+      
+      // Handle case where payment proof doesn't exist
+      if (error.response?.status === 404) {
+        setLoadedProofs(prev => ({ 
+          ...prev, 
+          [key]: 'NOT_UPLOADED' 
+        }));
+      } else {
+        setMessage('Failed to load payment proof');
+        setMessageType('error');
+      }
     } finally {
       setLoadingProofs(prev => ({ ...prev, [key]: false }));
     }
@@ -205,6 +214,17 @@ export default function PaymentApprovals() {
                       }
 
                       if (isLoaded) {
+                        if (isLoaded === 'NOT_UPLOADED') {
+                          return (
+                            <div style={{ ...styles.proofPlaceholder, background: '#ffebee', border: '2px solid #f44336' }}>
+                              <p style={{ margin: '0 0 10px 0', color: '#c62828', fontWeight: 'bold' }}>❌ No Payment Proof Uploaded</p>
+                              <p style={{ margin: 0, fontSize: '13px', color: '#666' }}>
+                                The participant has not uploaded payment proof yet. You can reject this request or wait for upload.
+                              </p>
+                            </div>
+                          );
+                        }
+                        
                         return (
                           <img 
                             src={isLoaded} 

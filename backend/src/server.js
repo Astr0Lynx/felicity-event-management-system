@@ -18,30 +18,10 @@ const PORT = process.env.PORT || 5000;
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// CORS configuration to handle Vercel preview URLs
+// CORS configuration - allow all Vercel domains
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
-        if (!origin) return callback(null, true);
-        
-        // Allow all Vercel preview and production URLs
-        if (origin.includes('vercel.app') || origin === process.env.FRONTEND_URL) {
-            return callback(null, true);
-        }
-        
-        // Allow localhost for development
-        if (origin.includes('localhost')) {
-            return callback(null, true);
-        }
-        
-        // Fallback to env variable or allow all
-        if (process.env.FRONTEND_URL === '*') {
-            return callback(null, true);
-        }
-        
-        callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true //allow cookies/tokens
+    origin: true, // Allow all origins
+    credentials: true
 }));
 
 app.use("/api/participants", participantRoutes);

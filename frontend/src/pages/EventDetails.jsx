@@ -263,11 +263,21 @@ export default function EventDetails() {
         await api.post(`/events/${id}/register`, {
           variant_orders: variantOrders
         });
-        alert('🛒 Order placed! Please upload payment proof below to complete your purchase.');
         setShowRegisterForm(false);
         setVariantOrders([]); // Clear cart
         // Refresh event details to show registration info and payment upload section
         await fetchEventDetails();
+        
+        // Scroll to payment proof upload section after a brief delay
+        setTimeout(() => {
+          const paymentSection = document.querySelector('[data-payment-upload]');
+          if (paymentSection) {
+            paymentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            paymentSection.style.animation = 'pulse 2s ease-in-out 3';
+          }
+        }, 500);
+        
+        alert('🛒 Order placed successfully!\n\n📸 IMPORTANT: Scroll down to upload your payment proof to complete the purchase.');
       }
       
     } catch (err) {
@@ -506,23 +516,50 @@ export default function EventDetails() {
                       
                       {/* Payment Proof Upload */}
                       {(registrationInfo.payment_status === 'pending' || registrationInfo.payment_status === 'rejected') && (
-                        <div style={{ marginTop: '20px', padding: '15px', background: '#fff3cd', borderRadius: '6px', border: '1px solid #ffc107' }}>
-                          <p style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#856404' }}>
+                        <div 
+                          data-payment-upload 
+                          style={{ 
+                            marginTop: '20px', 
+                            padding: '20px', 
+                            background: '#fff3cd', 
+                            borderRadius: '8px', 
+                            border: '3px solid #ffc107',
+                            boxShadow: '0 2px 8px rgba(255,193,7,0.3)'
+                          }}
+                        >
+                          <h4 style={{ margin: '0 0 10px 0', color: '#856404', fontSize: '18px' }}>
                             {registrationInfo.payment_status === 'rejected' 
-                              ? '❌ Your payment proof was rejected. Please upload a new one.'
-                              : '📸 Upload payment proof for organizer approval'}
+                              ? '❌ Payment Proof Rejected - Upload New Proof'
+                              : '📸 Upload Payment Proof (Required)'}
+                          </h4>
+                          <p style={{ margin: '0 0 15px 0', fontSize: '14px', color: '#856404', lineHeight: '1.6' }}>
+                            {registrationInfo.payment_status === 'rejected' 
+                              ? 'Your previous payment proof was rejected. Please upload a clear, valid payment screenshot.'
+                              : 'Upload a screenshot of your payment transaction to complete your order. Organizer will verify and approve.'}
                           </p>
                           <input
                             type="file"
                             accept="image/*"
                             onChange={handlePaymentProofUpload}
-                            style={{ display: 'block', marginBottom: '10px' }}
+                            style={{ 
+                              display: 'block', 
+                              marginBottom: '10px',
+                              padding: '10px',
+                              border: '2px dashed #ffc107',
+                              borderRadius: '4px',
+                              width: '100%',
+                              cursor: 'pointer'
+                            }}
                             disabled={uploadingProof}
                           />
-                          {uploadingProof && <p style={{ fontSize: '13px', color: '#666' }}>Uploading...</p>}
-                          {registrationInfo.payment_proof && (
-                            <p style={{ fontSize: '13px', color: '#155724', margin: '10px 0 0 0' }}>
-                              ✓ Proof uploaded, waiting for approval
+                          {uploadingProof && (
+                            <p style={{ fontSize: '14px', color: '#666', margin: '10px 0' }}>
+                              ⏳ Uploading payment proof...
+                            </p>
+                          )}
+                          {registrationInfo.payment_proof && !uploadingProof && (
+                            <p style={{ fontSize: '14px', color: '#155724', margin: '10px 0', padding: '10px', background: '#d4edda', borderRadius: '4px' }}>
+                              ✓ Payment proof uploaded successfully! Waiting for organizer approval.
                             </p>
                           )}
                         </div>
