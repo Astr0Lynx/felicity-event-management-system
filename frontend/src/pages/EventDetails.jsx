@@ -16,19 +16,19 @@ export default function EventDetails() {
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [registrationInfo, setRegistrationInfo] = useState(null);
   
-  // Payment proof upload state for merchandise
+  //payment proof upload state for merchandise
   const [paymentProof, setPaymentProof] = useState('');
   const [uploadingProof, setUploadingProof] = useState(false);
   
-  // Form state for custom fields
+  //form state for custom fields
   const [formAnswers, setFormAnswers] = useState({});
   
-  // Merchandise state - UPDATED to support multiple variants
+  //merchandise state - updated to support multiple variants
   const [variantOrders, setVariantOrders] = useState([]);
   const [currentVariant, setCurrentVariant] = useState('');
   const [currentQuantity, setCurrentQuantity] = useState(1);
 
-  // TIER C: Feedback state
+  //tier c: feedback state
   const [feedbackData, setFeedbackData] = useState(null);
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [feedbackComment, setFeedbackComment] = useState('');
@@ -37,7 +37,7 @@ export default function EventDetails() {
   const [ratingFilter, setRatingFilter] = useState('all');
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
 
-  // Get user role for navigation
+  //get user role for navigation
   const getUserDashboard = () => {
     const userStr = localStorage.getItem('user');
     if (!userStr) return '/login';
@@ -62,7 +62,7 @@ export default function EventDetails() {
       
       setEvent(data);
       
-      // Check if user is already registered and get registration info
+      //check if user is already registered and get registration info
       const userStr = localStorage.getItem('user');
       if (userStr) {
         const currentUser = JSON.parse(userStr);
@@ -227,7 +227,7 @@ export default function EventDetails() {
     setVariantOrders(variantOrders.filter(v => v.variant_name !== variantName));
   };
 
-  // NEW: Calculate total price
+  //calculate total price for cart
   const calculateTotalPrice = () => {
     if (!event || event.type !== 'merchandise') return 0;
     

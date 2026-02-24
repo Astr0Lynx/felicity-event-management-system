@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom';
 export default function Profile() {
   const navigate = useNavigate();
 
-  // ===== STATE MANAGEMENT =====
-  // isEditing: Toggle between view mode and edit mode
-  // formData: Stores all the editable profile fields
+  //state management
+  //editing mode toggle
+  //form data stores editable fields
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     first_name: '',
@@ -18,7 +18,7 @@ export default function Profile() {
     followed_clubs: []
   });
   
-  // Non-editable fields (display only)
+  //non-editable fields
   const [nonEditableData, setNonEditableData] = useState({
     email: '',
     participant_type: ''
@@ -29,7 +29,7 @@ export default function Profile() {
   const [success, setSuccess] = useState('');
   const [userRole, setUserRole] = useState('participant');
   
-  // Password change state
+  //password change state
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -39,20 +39,20 @@ export default function Profile() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
-  // ===== LOAD USER DATA ON MOUNT =====
+  //load data on mount
   useEffect(() => {
     fetchUserProfile();
   }, []);
 
-  // Fetch current user profile from backend
+  //fetch user profile
   const fetchUserProfile = async () => {
     try {
-      // Check user role from localStorage
+      //check role from localstorage
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       const role = storedUser.role;
       setUserRole(role);
 
-      // For admin/organizer, just show localStorage data (no API call needed)
+      //admin/organizer use localstorage data
       if (role === 'admin') {
         setNonEditableData({
           email: storedUser.email || '',
@@ -87,10 +87,10 @@ export default function Profile() {
         return;
       }
 
-      // For participants, fetch from API
+      //participants fetch from api
       const { data } = await api.get('/participants/profile');
       
-      // Separate editable and non-editable fields
+      //separate editable fields
       setFormData({
         first_name: data.data.first_name || '',
         last_name: data.data.last_name || '',
@@ -109,7 +109,7 @@ export default function Profile() {
       console.error('Error fetching profile:', err);
       setError('Failed to load profile');
       
-      // If unauthorized, redirect to login
+      //redirect if unauthorized
       if (err.response?.status === 401) {
         localStorage.clear();
         navigate('/login');
@@ -119,7 +119,7 @@ export default function Profile() {
     }
   };
 
-  // ===== HANDLE INPUT CHANGES =====
+  //handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -128,19 +128,19 @@ export default function Profile() {
     }));
   };
 
-  // ===== SAVE PROFILE CHANGES =====
+  //save profile
   const handleSave = async () => {
     setError('');
     setSuccess('');
 
     try {
-      // Send only editable fields to backend
+      //send editable fields only
       await api.put('/participants/profile', formData);
       
       setSuccess('Profile updated successfully!');
       setIsEditing(false);
 
-      // Update localStorage user data
+      //update localstorage
       const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
       localStorage.setItem('user', JSON.stringify({
         ...storedUser,

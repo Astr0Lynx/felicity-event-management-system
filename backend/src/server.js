@@ -14,13 +14,13 @@ const PORT = process.env.PORT || 5000;
 
 
 //middleware
-// Increase payload size limit for base64 images (default is 100kb)
+//increase payload limit for images
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// CORS configuration - allow all Vercel domains
+//cors setup for vercel
 app.use(cors({
-    origin: true, // Allow all origins
+    origin: true,
     credentials: true
 }));
 

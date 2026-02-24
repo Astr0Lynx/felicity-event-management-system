@@ -18,7 +18,7 @@ export default function OrganizerProfile() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // TIER B: Password Reset Request state
+  //password reset request state
   const [showResetRequest, setShowResetRequest] = useState(false);
   const [resetReason, setResetReason] = useState('');
   const [resetHistory, setResetHistory] = useState([]);
@@ -36,7 +36,7 @@ export default function OrganizerProfile() {
       setResetHistory(data.data || []);
     } catch (err) {
       console.error('Error fetching reset history:', err);
-      // Don't show error to user, just fail silently
+      //dont show error, fail silently
     }
   };
 
@@ -50,7 +50,7 @@ export default function OrganizerProfile() {
 
       const user = JSON.parse(userStr);
       
-      // Fetch organizer details from backend
+      //fetch organizer details
       const { data } = await api.get('/organizer/profile');
       
       setOrganizerData({
@@ -115,7 +115,7 @@ export default function OrganizerProfile() {
     }
   };
 
-  // TIER B: Handle password reset request
+  //handle password reset request
   const handleResetRequest = async () => {
     setResetError('');
     setResetMessage('');
@@ -134,7 +134,7 @@ export default function OrganizerProfile() {
       setResetReason('');
       setShowResetRequest(false);
       
-      // Refresh history to show new request
+      //refresh history
       await fetchResetHistory();
 
       setTimeout(() => setResetMessage(''), 5000);

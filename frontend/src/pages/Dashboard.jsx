@@ -7,7 +7,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [myEvents, setMyEvents] = useState([]);
-  const [activeTab, setActiveTab] = useState('all'); // all, normal, merchandise, completed, cancelled
+  const [activeTab, setActiveTab] = useState('all'); //all, normal, merch, completed
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedEventId, setSelectedEventId] = useState(null);
@@ -19,7 +19,7 @@ export default function Dashboard() {
         // A. Get User Info from LocalStorage (fastest way)
         const storedUser = localStorage.getItem('user');
         if (!storedUser) {
-          navigate('/login'); // Kick them out if not logged in
+          navigate('/login'); //redirect if not logged in
           return;
         }
         setUser(JSON.parse(storedUser));
@@ -27,12 +27,12 @@ export default function Dashboard() {
         // B. Get My Registered Events from Backend
         const { data } = await api.get('/events/participant/me');
         console.log("My Events:", data);
-        setMyEvents(data.data); // Assuming backend returns { success: true, data: [...] }
+        setMyEvents(data.data); //assuming backend returns data array
 
       } catch (err) {
         console.error("Failed to fetch dashboard data", err);
         setError("Could not load your events.");
-        // If token is invalid (401), kick them out
+        //invalid token, redirect
         if (err.response?.status === 401) {
           localStorage.clear();
           navigate('/login');

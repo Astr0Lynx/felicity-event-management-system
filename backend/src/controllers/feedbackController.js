@@ -1,20 +1,19 @@
 import crypto from 'crypto';
 import { Event } from '../models/user.js';
 
-// Helper function to create anonymous hash from participant ID
+//hash participant id for anonymity
 function createParticipantHash(participantId, eventId) {
     return crypto.createHash('sha256').update(`${participantId}-${eventId}`).digest('hex');
 }
 
-// POST /api/events/:id/feedback
-// Submit anonymous feedback for an event
+//submit feedback
 export async function submitFeedback(req, res) {
     try {
         const eventId = req.params.id;
         const userId = req.user.id;
         const { rating, comment } = req.body;
 
-        // Validation
+        //validate rating
         if (!rating || rating < 1 || rating > 5) {
             return res.status(400).json({
                 success: false,
@@ -36,7 +35,7 @@ export async function submitFeedback(req, res) {
             });
         }
 
-        // Find event
+        //find event
         const event = await Event.findById(eventId);
         if (!event) {
             return res.status(404).json({
@@ -45,7 +44,7 @@ export async function submitFeedback(req, res) {
             });
         }
 
-        // Check if user is registered for this event
+        //check if user is registered
         const isRegistered = event.registered_participants.some(
             rp => rp.participant.toString() === userId
         );
@@ -57,7 +56,7 @@ export async function submitFeedback(req, res) {
             });
         }
 
-        // Check if user has already submitted feedback (using hash for anonymity)
+        //check if already submitted
         const participantHash = createParticipantHash(userId, eventId);
         const hasSubmitted = event.feedback && event.feedback.some(
             fb => fb.participant_hash === participantHash
@@ -70,12 +69,12 @@ export async function submitFeedback(req, res) {
             });
         }
 
-        // Initialize feedback array if it doesn't exist
+        //init feedback array if needed
         if (!event.feedback) {
             event.feedback = [];
         }
 
-        // Add feedback (anonymous - no participant reference stored)
+        //add feedback anonymously
         event.feedback.push({
             rating: parseInt(rating),
             comment: comment.trim(),
@@ -145,16 +144,16 @@ export async function getFeedback(req, res) {
         };
 
         if (totalFeedback > 0) {
-            // Calculate average
+            //avg rating
             const totalRating = event.feedback.reduce((sum, fb) => sum + fb.rating, 0);
             stats.average_rating = (totalRating / totalFeedback).toFixed(2);
 
-            // Calculate distribution
+            //rating distribution
             event.feedback.forEach(fb => {
                 stats.rating_distribution[fb.rating]++;
             });
 
-            // Convert counts to percentages
+            //convert to percentages
             Object.keys(stats.rating_distribution).forEach(rating => {
                 const count = stats.rating_distribution[rating];
                 stats.rating_distribution[rating] = {
@@ -164,7 +163,7 @@ export async function getFeedback(req, res) {
             });
         }
 
-        // Return feedback without participant_hash (keep it truly anonymous)
+        //return feedback without hash for privacy
         const anonymousFeedback = feedbackList.map(fb => ({
             rating: fb.rating,
             comment: fb.comment,
@@ -189,8 +188,7 @@ export async function getFeedback(req, res) {
     }
 }
 
-// GET /api/events/:id/feedback/export
-// Export feedback to CSV (for organizers)
+//export feedback to csv
 export async function exportFeedback(req, res) {
     try {
         const eventId = req.params.id;
@@ -207,7 +205,7 @@ export async function exportFeedback(req, res) {
             });
         }
 
-        // Check if user is the organizer
+        //verify organizer
         if (event.organizer_id._id.toString() !== userId) {
             return res.status(403).json({
                 success: false,
@@ -222,12 +220,12 @@ export async function exportFeedback(req, res) {
             });
         }
 
-        // Calculate statistics for CSV header
+        //calc stats for csv
         const totalFeedback = event.feedback.length;
         const totalRating = event.feedback.reduce((sum, fb) => sum + fb.rating, 0);
         const averageRating = (totalRating / totalFeedback).toFixed(2);
 
-        // Generate CSV content
+        //generate csv
         let csv = `Event Name,${event.name}\n`;
         csv += `Total Feedback,${totalFeedback}\n`;
         csv += `Average Rating,${averageRating}\n`;
@@ -235,12 +233,12 @@ export async function exportFeedback(req, res) {
         csv += `Rating,Comment,Submitted At\n`;
 
         event.feedback.forEach(fb => {
-            const comment = fb.comment.replace(/"/g, '""'); // Escape quotes
+            const comment = fb.comment.replace(/"/g, '""'); //escape quotes
             const submittedAt = new Date(fb.submitted_at).toLocaleString();
             csv += `${fb.rating},"${comment}","${submittedAt}"\n`;
         });
 
-        // Set headers for file download
+        //set download headers
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="feedback-${event.name.replace(/\s+/g, '-')}-${Date.now()}.csv"`);
         
@@ -255,8 +253,7 @@ export async function exportFeedback(req, res) {
     }
 }
 
-// GET /api/events/:id/feedback/check
-// Check if current user has submitted feedback
+//check if user submitted feedback
 export async function checkFeedbackStatus(req, res) {
     try {
         const eventId = req.params.id;
@@ -277,7 +274,7 @@ export async function checkFeedbackStatus(req, res) {
             rp => rp.participant.toString() === userId
         );
 
-        // Check if already submitted
+        //check if already submitted
         const participantHash = createParticipantHash(userId, eventId);
         const hasSubmitted = event.feedback && event.feedback.some(
             fb => fb.participant_hash === participantHash

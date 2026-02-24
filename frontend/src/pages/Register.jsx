@@ -20,7 +20,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Handle typing in any box
+  //handle input change
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -33,13 +33,13 @@ export default function Register() {
     setError('');
 
     try {
-      // Send data to backend
+      //send to backend
       const response = await api.post('/participants/register', formData);
       
       console.log("Registration Success:", response.data);
       setSuccess(true);
       
-      // Wait 2 seconds then go to login
+      //wait then redirect
       setTimeout(() => {
         navigate('/login');
       }, 2000);

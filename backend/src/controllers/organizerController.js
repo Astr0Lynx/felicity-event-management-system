@@ -57,7 +57,7 @@ export async function loginOrganizer (req, res) {
     }
 }
 
-// Get organizer profile
+//get organizer profile
 export async function getOrganizerProfile(req, res) {
     try {
         const organizerId = req.user.id;
@@ -90,7 +90,7 @@ export async function getOrganizerProfile(req, res) {
     }
 }
 
-// Change organizer password
+//change password
 export async function changePassword(req, res) {
     try {
         const organizerId = req.user.id;
@@ -119,7 +119,7 @@ export async function changePassword(req, res) {
             });
         }
 
-        // Verify current password
+        //verify current password
         const isPasswordCorrect = await bcrypt.compare(currentPassword, organizer.password);
         
         if (!isPasswordCorrect) {
@@ -129,7 +129,7 @@ export async function changePassword(req, res) {
             });
         }
 
-        // Hash new password
+        //hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         organizer.password = hashedPassword;
         await organizer.save();
@@ -148,7 +148,7 @@ export async function changePassword(req, res) {
     }
 }
 
-// Update organizer profile
+//update organizer profile
 export async function updateOrganizerProfile(req, res) {
     try {
         const organizerId = req.user.id;
@@ -163,7 +163,7 @@ export async function updateOrganizerProfile(req, res) {
             });
         }
 
-        // Update organizer details
+        //update organizer details
         if (name || category || description) {
             const organizerDetail = await OrganizerDetail.findById(organizer.organizer_details);
             if (organizerDetail) {
@@ -174,7 +174,7 @@ export async function updateOrganizerProfile(req, res) {
             }
         }
 
-        // Update organizer direct fields
+        //update direct fields
         if (contact_number !== undefined) organizer.contact_number = contact_number;
         if (discord_webhook !== undefined) organizer.discord_webhook = discord_webhook;
         
@@ -194,7 +194,7 @@ export async function updateOrganizerProfile(req, res) {
     }
 }
 
-// Test Discord webhook
+//test discord webhook
 export async function testWebhook(req, res) {
     try {
         const { webhook_url } = req.body;
@@ -206,7 +206,7 @@ export async function testWebhook(req, res) {
             });
         }
 
-        // Send test message to Discord
+        //send test msg
         await axios.post(webhook_url, {
             content: '🎉 **Test Message from Felicity Event Management System**\n\nYour Discord webhook is configured correctly! New events will be posted here automatically.',
             username: 'Felicity Events'

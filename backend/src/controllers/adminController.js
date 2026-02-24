@@ -54,7 +54,7 @@ export async function createOrganizer (req, res) {
     try {
         const { name, category, description } = req.body;
 
-        //await TA response for checking existing organizer
+        //check if organizer already exists
         const existing = await OrganizerDetail.findOne({ name });
         if(existing) {
             return res.status(400).json({
@@ -63,7 +63,7 @@ export async function createOrganizer (req, res) {
             })
         }
 
-        //create new
+        //create new organizer
         const organizerCount = await Organizer.countDocuments();
         const generatedEmail = `${name.toLowerCase()}@organizers.iiit.ac.in`;
 
@@ -121,7 +121,7 @@ export async function deleteOrganizer (req, res) {
      try {
         const organizerDetailId = req.params.id;
         
-        // Find the organizer detail first
+        //find the organizer detail first
         const organizerDetail = await OrganizerDetail.findById(organizerDetailId);
         if (!organizerDetail) {
             return res.status(404).json({
@@ -130,10 +130,10 @@ export async function deleteOrganizer (req, res) {
             });
         }
 
-        // Find the organizer document that references this detail
+        //find the organizer document that references this detail
         const organizer = await Organizer.findOne({ organizer_details: organizerDetailId });
         
-        // Delete both documents
+        //delete both documents
         await OrganizerDetail.findByIdAndDelete(organizerDetailId);
         if (organizer) {
             await Organizer.findByIdAndDelete(organizer._id);
@@ -153,7 +153,7 @@ export async function deleteOrganizer (req, res) {
     }
 }
 
-// Delete event (admin only)
+//delete event (admin only)
 export async function deleteEvent(req, res) {
     try {
         const eventId = req.params.id;

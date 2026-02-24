@@ -1,6 +1,6 @@
 import mongoose from "mongoose"
 
-//users 
+//users
 const participantSchema = new mongoose.Schema({
     first_name: {
         type: String,
@@ -167,7 +167,7 @@ const eventSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         },
-        // For Merchandise Events - Payment Approval Workflow
+        //for merchandise events - payment approval workflow
         payment_proof: {
             type: String,  // URL or base64 image
             default: null
@@ -186,22 +186,22 @@ const eventSchema = new mongoose.Schema({
             ref: 'Organizer',
             default: null
         },
-        // For Merchandise Orders - Support multiple variants in one order
+        //for merchandise orders - support multiple variants in one order
         variant_orders: [{
             variant_name: String,
             quantity: Number
         }],
-        // Legacy fields (kept for backward compatibility)
+        //legacy fields for backwards compatibility
         variant_name: String,
         quantity: Number,
-        // QR Code and Ticket Generation
+        //qr code and ticket generation
         qr_code_generated: {
             type: Boolean,
             default: false
         }
     }],
 
-    // QR Scanner & Attendance Tracking
+    //qr scanner and attendance tracking
     attendance: [{
         participant: {
             type: mongoose.Schema.Types.ObjectId,
@@ -221,10 +221,10 @@ const eventSchema = new mongoose.Schema({
             enum: ['qr_scan', 'manual_override'],
             default: 'qr_scan'
         },
-        notes: String  // For manual overrides
+        notes: String
     }],
 
-    // For Normal Events - Custom Registration Form
+    //for normal events - custom registration form
     custom_form_fields: [{
         field_name: String,
         field_type: { 
@@ -233,9 +233,9 @@ const eventSchema = new mongoose.Schema({
             lowercase: true
         },
         is_required: Boolean,
-        options: [String]  // For dropdown/checkbox
+        options: [String]
     }],
-    // For Merchandise Events
+    //for merchandise events
     merchandise_details: {
         item_name: String,
         sizes: [{ 
@@ -253,7 +253,7 @@ const eventSchema = new mongoose.Schema({
         purchase_limit_per_participant: Number
     },
 
-    // TIER B: Real-Time Discussion Forum
+    //tier b: real-time discussion forum
     discussion_forum: [{
         message_id: {
             type: mongoose.Schema.Types.ObjectId,
@@ -283,24 +283,24 @@ const eventSchema = new mongoose.Schema({
         },
         parent_message_id: {
             type: mongoose.Schema.Types.ObjectId,
-            default: null  // null means top-level message, otherwise it's a reply
+            default: null
         },
         reactions: [{
             user: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Participant'
             },
-            emoji: String  // e.g., '👍', '❤️', '😂', '🎉'
+            emoji: String
         }],
         posted_at: {
             type: Date,
             default: Date.now
         },
         edited_at: Date,
-        deleted_at: Date  // Soft delete
+        deleted_at: Date
     }],
 
-    // TIER C: Anonymous Feedback System
+    //tier c: anonymous feedback system
     feedback: [{
         rating: {
             type: Number,
@@ -317,8 +317,8 @@ const eventSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         },
-        // Track that feedback is from a registered participant without storing reference
-        // This maintains anonymity while preventing duplicate submissions
+        //track participant without storing reference
+        //maintains anonymity while preventing duplicates
         participant_hash: {
             type: String,  // Hashed participant ID to check duplicates anonymously
             required: true
@@ -326,18 +326,18 @@ const eventSchema = new mongoose.Schema({
     }]
 }, { timestamps: true });
 
-// Add indexes for better query performance
-eventSchema.index({ organizer_id: 1 });  // For organizer dashboard
-eventSchema.index({ 'registered_participants.participant': 1 });  // For participant dashboard
-eventSchema.index({ type: 1 });  // For filtering by type
-eventSchema.index({ createdAt: -1 });  // For sorting
-eventSchema.index({ 'registered_participants.payment_status': 1 });  // For payment approvals
-eventSchema.index({ start_date: 1 });  // For date filtering
+//add indexes for better query performance
+eventSchema.index({ organizer_id: 1 });
+eventSchema.index({ 'registered_participants.participant': 1 });
+eventSchema.index({ type: 1 });
+eventSchema.index({ createdAt: -1 });
+eventSchema.index({ 'registered_participants.payment_status': 1 });
+eventSchema.index({ start_date: 1 });
 
-// Add custom validation
+//add custom validation
 eventSchema.pre('save', async function() {
     if (this.type === 'normal') {
-        // If normal event, merchandise_details should be empty/null/undefined
+        //if normal event,merchandise_details should be empty
         const hasMerchandiseDetails = this.merchandise_details && 
             (this.merchandise_details.item_name || 
              (this.merchandise_details.variants && this.merchandise_details.variants.length > 0));
@@ -345,22 +345,22 @@ eventSchema.pre('save', async function() {
         if (hasMerchandiseDetails) {
             throw new Error('Normal events cannot have merchandise details');
         }
-        // custom_form_fields are optional for normal events
+        //custom_form_fields are optional for normal events
     }
     
     if (this.type === 'merchandise') {
-        // If merchandise event, custom_form_fields should be empty
+        //if merchandise event custom_form_fields should be empty
         if (this.custom_form_fields && this.custom_form_fields.length > 0) {
             throw new Error('Merchandise events cannot have custom form fields');
         }
-        // Require merchandise_details
+        //require merchandise_details
         if (!this.merchandise_details || !this.merchandise_details.item_name) {
             throw new Error('Merchandise events must have merchandise details');
         }
     }
 });
 
-// Also add validation for updates
+//also add validation for updates
 eventSchema.pre('findOneAndUpdate', async function() {
     const update = this.getUpdate();
     
@@ -373,7 +373,7 @@ eventSchema.pre('findOneAndUpdate', async function() {
     }
 });
 
-// TIER B: Organizer Password Reset Request Schema
+//tier b: organizer password reset request schema
 const passwordResetRequestSchema = new mongoose.Schema({
     organizer_id: {
         type: mongoose.Schema.Types.ObjectId,
@@ -403,7 +403,7 @@ const passwordResetRequestSchema = new mongoose.Schema({
         default: null
     },
     new_password: {
-        type: String,  // Auto-generated on approval
+        type: String,
         default: null
     }
 }, { timestamps: true });

@@ -9,7 +9,7 @@ export default function PaymentApprovals() {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   
-  // NEW: Track loaded payment proofs (lazy loading)
+  //lazy load payment proofs
   const [loadedProofs, setLoadedProofs] = useState({});
   const [loadingProofs, setLoadingProofs] = useState({});
 

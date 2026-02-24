@@ -2,10 +2,9 @@ import bcrypt from 'bcryptjs';
 import { PasswordResetRequest, Organizer } from '../models/user.js';
 import crypto from 'crypto';
 
-// ========== TIER B FEATURE: Organizer Password Reset Workflow ==========
+//password reset workflow
 
-// POST /api/organizers/request-password-reset
-// Organizer requests password reset from admin
+//organizer request password reset
 export async function requestPasswordReset(req, res) {
     try {
         const organizerId = req.user.id;
@@ -18,7 +17,7 @@ export async function requestPasswordReset(req, res) {
             });
         }
 
-        // Check if there's already a pending request
+        //check for existing pending request
         const existingRequest = await PasswordResetRequest.findOne({
             organizer_id: organizerId,
             status: 'pending'
@@ -31,7 +30,7 @@ export async function requestPasswordReset(req, res) {
             });
         }
 
-        // Create new request
+        //create request
         const resetRequest = new PasswordResetRequest({
             organizer_id: organizerId,
             reason,
@@ -59,8 +58,7 @@ export async function requestPasswordReset(req, res) {
     }
 }
 
-// GET /api/organizers/password-reset-history
-// Get password reset request history for logged-in organizer
+//get organizer reset history
 export async function getMyResetHistory(req, res) {
     try {
         const organizerId = req.user.id;
@@ -83,7 +81,7 @@ export async function getMyResetHistory(req, res) {
                 reviewed_by: req.reviewed_by?.email || null,
                 reviewed_at: req.reviewed_at,
                 admin_comment: req.admin_comment,
-                // Don't send the new password back
+                //dont send password back
             }))
         });
     } catch (error) {
@@ -96,11 +94,10 @@ export async function getMyResetHistory(req, res) {
     }
 }
 
-// GET /api/admin/password-reset-requests
-// Admin views all password reset requests
+//admin view all reset requests
 export async function getAllResetRequests(req, res) {
     try {
-        const { status } = req.query; // Optional filter by status
+        const { status } = req.query;
 
         const query = status ? { status } : {};
 
@@ -119,7 +116,7 @@ export async function getAllResetRequests(req, res) {
             .lean();
 
         const formattedRequests = requests
-            .filter(req => req.organizer_id) // Filter out requests with deleted organizers
+            .filter(req => req.organizer_id) //filter deleted organizers
             .map(req => ({
                 request_id: req._id,
                 organizer_email: req.organizer_id.email,
@@ -131,7 +128,7 @@ export async function getAllResetRequests(req, res) {
                 reviewed_by: req.reviewed_by?.email || null,
                 reviewed_at: req.reviewed_at,
                 admin_comment: req.admin_comment,
-                new_password: req.new_password  // Admin needs to see this to share with organizer
+                new_password: req.new_password  //admin needs this
             }));
 
         res.status(200).json({
@@ -150,7 +147,7 @@ export async function getAllResetRequests(req, res) {
 }
 
 // PUT /api/admin/password-reset-requests/:id/approve
-// Admin approves password reset request and auto-generates new password
+//admin approve reset
 export async function approveResetRequest(req, res) {
     try {
         const requestId = req.params.id;
@@ -172,11 +169,11 @@ export async function approveResetRequest(req, res) {
             });
         }
 
-        // Auto-generate strong random password (12 characters)
-        const newPassword = crypto.randomBytes(6).toString('hex'); // 12 character hex string
+        //generate random password
+        const newPassword = crypto.randomBytes(6).toString('hex');
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update organizer's password
+        //update organizer password
         const organizer = await Organizer.findById(resetRequest.organizer_id);
         if (!organizer) {
             return res.status(404).json({
@@ -188,12 +185,12 @@ export async function approveResetRequest(req, res) {
         organizer.password = hashedPassword;
         await organizer.save();
 
-        // Update request status
+        //update request status
         resetRequest.status = 'approved';
         resetRequest.reviewed_by = adminId;
         resetRequest.reviewed_at = new Date();
         resetRequest.admin_comment = admin_comment;
-        resetRequest.new_password = newPassword; // Store plain password temporarily for admin to share
+        resetRequest.new_password = newPassword; //store temporarily for admin
         await resetRequest.save();
 
         res.status(200).json({
@@ -201,7 +198,7 @@ export async function approveResetRequest(req, res) {
             message: 'Password reset approved successfully',
             data: {
                 organizer_email: organizer.email,
-                new_password: newPassword,  // Admin receives this to share with organizer
+                new_password: newPassword,  //share with organizer
                 message: 'Share this password with the organizer securely'
             }
         });
@@ -215,8 +212,7 @@ export async function approveResetRequest(req, res) {
     }
 }
 
-// PUT /api/admin/password-reset-requests/:id/reject
-// Admin rejects password reset request
+//admin reject reset
 export async function rejectResetRequest(req, res) {
     try {
         const requestId = req.params.id;
@@ -245,7 +241,7 @@ export async function rejectResetRequest(req, res) {
             });
         }
 
-        // Update request status
+        //update status
         resetRequest.status = 'rejected';
         resetRequest.reviewed_by = adminId;
         resetRequest.reviewed_at = new Date();

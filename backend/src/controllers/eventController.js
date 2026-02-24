@@ -33,7 +33,7 @@ export async function createEvent (req, res) {
             });
         }
 
-        // Build event data with only relevant fields
+        //build the event data stuff
         const eventData = {
             name, 
             description, 
@@ -48,7 +48,7 @@ export async function createEvent (req, res) {
             organizer_id: req.user.id
         };
 
-        // Add type-specific fields
+        //add type specific stuff
         if (type === 'normal' && custom_form_fields) {
             eventData.custom_form_fields = custom_form_fields;
         } else if (type === 'merchandise' && merchandise_details) {
@@ -59,19 +59,19 @@ export async function createEvent (req, res) {
 
         const savedEvent = await newEvent.save();
 
-        // Send Discord webhook notification
+        //send discord notification
         try {
             const organizer = await Organizer.findById(req.user.id).populate('organizer_details');
             
             if (organizer && organizer.discord_webhook) {
-                // Format dates for better readability
+                //format dates
                 const formatDate = (date) => new Date(date).toLocaleString('en-IN', { 
                     timeZone: 'Asia/Kolkata',
                     dateStyle: 'medium',
                     timeStyle: 'short'
                 });
 
-                // Create Discord embed message
+                //discord embed message
                 const discordMessage = {
                     username: 'Felicity Events',
                     embeds: [{
@@ -117,7 +117,7 @@ export async function createEvent (req, res) {
                     }]
                 };
 
-                // Add tags field if present
+                //add tags if there
                 if (event_tags && event_tags.length > 0) {
                     discordMessage.embeds[0].fields.push({
                         name: '🏷️ Tags',
@@ -130,7 +130,7 @@ export async function createEvent (req, res) {
                 console.log(`Discord notification sent for event: ${name}`);
             }
         } catch (webhookError) {
-            // Log the error but don't fail event creation
+            //dont fail if webhook breaks
             console.error('Failed to send Discord webhook:', webhookError.message);
         }
 
@@ -149,18 +149,18 @@ export async function createEvent (req, res) {
     
 }
 
-// GET /api/events
+//get all events
 export async function getAllEvents(req, res) {
     try {
         const { search, type, startDate, endDate } = req.query;
 
         let query = {};
 
-        // Search logic (Fuzzy matching on Name OR Tags)
+        //search by name or tags
         if (search) {
             query.$or = [
-                { name: { $regex: search, $options: 'i' } }, // Case-insensitive name match
-                { event_tags: { $regex: search, $options: 'i' } } // Tag match
+                { name: { $regex: search, $options: 'i' } },
+                { event_tags: { $regex: search, $options: 'i' } }
             ];
         }
 
@@ -168,16 +168,16 @@ export async function getAllEvents(req, res) {
             query.type = type;
         }
 
-        // Filter by Date Range
+        //filter by dates
         if (startDate || endDate) {
             query.start_date = {};
             if (startDate) query.start_date.$gte = new Date(startDate);
             if (endDate) query.start_date.$lte = new Date(endDate);
         }
 
-        // 3. Fetch from DB
-        // .populate() is magic: it replaces the 'organizer_id' ID with the actual Organizer document
-        // Exclude payment proofs and attendance for performance
+        //fetch from db
+        //.populate() replaces organizer_id with actual data
+        //exclude payment proofs for performance
         const events = await Event.find(query)
             .select('-registered_participants.payment_proof -attendance')
             .populate({
@@ -189,7 +189,7 @@ export async function getAllEvents(req, res) {
                 }
             })
             .lean()
-            .sort({ createdAt: -1 }); // Newest first
+            .sort({ createdAt: -1 });
 
         res.status(200).json(events);
 
@@ -199,13 +199,13 @@ export async function getAllEvents(req, res) {
     }
 }
 
-// POST /api/events/:id/register
+//register for event endpoint
 export async function registerForEvent(req, res) {
     try {
         const eventId = req.params.id;
         const userId = req.user.id;
 
-        // Optimized: Exclude payment_proof field for fast registration
+        //optimized: exclude payment_proof for fast loading
         const event = await Event.findById(eventId)
             .select('-registered_participants.payment_proof');
         if (!event) {
@@ -215,7 +215,7 @@ export async function registerForEvent(req, res) {
             });
         }
 
-        // Check if event has ended
+        //check if event ended
         if (new Date(event.end_date) < new Date()) {
             return res.status(400).json({
                 success: false,
@@ -223,7 +223,7 @@ export async function registerForEvent(req, res) {
             });
         }
 
-        // RACE CONDITION FIX: Check for existing registration atomically
+        //race condition fix: check existing registration atomically
         const existingRegistration = event.registered_participants.find(
             rp => rp.participant && rp.participant.toString() === userId
         );
@@ -235,7 +235,7 @@ export async function registerForEvent(req, res) {
             });
         }
 
-        // Initialize registration data
+        //initialize registration data
         const registrationData = {
             participant: userId,
             form_values: [],
@@ -243,7 +243,7 @@ export async function registerForEvent(req, res) {
         };
 
         if (event.type === 'normal') {
-            // Only check reg_limit if it's a positive number (null/0 means unlimited)
+            //only check reg_limit if its a positive number
             if (event.reg_limit && event.reg_limit > 0 && event.registered_participants.length >= event.reg_limit) {
                 return res.status(400).json({
                     success: false,
@@ -251,9 +251,9 @@ export async function registerForEvent(req, res) {
                 });
             }
             
-            const { form_answers } = req.body; // Expecting: [{ field_name: "Team Name", answer: "Coders" }]
+            const { form_answers } = req.body;
             
-            //map for easy lookup of user answers
+            //map for easy lookup
             const userAnswers = new Map();
             if (form_answers) {
                 form_answers.forEach(a => userAnswers.set(a.field_name, a.answer));
@@ -279,9 +279,9 @@ export async function registerForEvent(req, res) {
         }
 
         else if (event.type === 'merchandise') {
-            const { variant_orders } = req.body; // Array of { variant_name, quantity }
+            const { variant_orders } = req.body;
 
-            // Validate at least one variant is selected
+            //validate at least one variant selected
             if (!variant_orders || variant_orders.length === 0) {
                 return res.status(400).json({
                     success: false,
@@ -289,7 +289,7 @@ export async function registerForEvent(req, res) {
                 });
             }
 
-            // Validate each variant and stock
+            //validate each variant and stock
             let totalPrice = 0;
             for (const order of variant_orders) {
                 if (!order.variant_name || order.variant_name.trim() === '') {
@@ -327,25 +327,25 @@ export async function registerForEvent(req, res) {
                 totalPrice += variant.price * order.quantity;
             }
 
-            // Store variant orders in registration data
+            //store variant orders
             registrationData.variant_orders = variant_orders;
             
-            // Legacy support: Store first variant in old fields
+            //legacy support for old fields
             registrationData.variant_name = variant_orders[0].variant_name;
             registrationData.quantity = variant_orders[0].quantity;
 
-            // Set payment status to pending - don't decrement stock yet
+            //set payment to pending, dont decrement stock yet
             registrationData.payment_status = 'pending';
             registrationData.qr_code_generated = false;
 
-            // Note: Stock will be decremented only when payment is approved
+            //note: stock decremented only when payment approved
         }
 
-        // 3. Register the User with ATOMIC operation to prevent race conditions
+        //register user with atomic operation to prevent race conditions
         const result = await Event.findOneAndUpdate(
             { 
                 _id: eventId,
-                'registered_participants.participant': { $ne: userId }  // Atomic check: user not already registered
+                'registered_participants.participant': { $ne: userId }
             },
             { 
                 $push: { registered_participants: registrationData } 
@@ -356,7 +356,7 @@ export async function registerForEvent(req, res) {
             }
         );
 
-        // If result is null, it means the user was already registered
+        //if null then user was already registered
         if (!result) {
             return res.status(400).json({
                 success: false,
@@ -386,11 +386,11 @@ export async function registerForEvent(req, res) {
 }
 
 
-// GET /api/events/organizer/me
-// specific for organizers to see their own events
+//get organizer events
+//for organizers to see their own events
 export async function getOrganizerEvents(req, res) {
     try {
-        // Exclude heavy payment_proof images and other unnecessary fields for list view
+        //exclude heavy payment_proof images for list view
         const events = await Event.find({ organizer_id: req.user.id })
             .select('-registered_participants.payment_proof -attendance')
             .lean()
@@ -407,19 +407,19 @@ export async function getOrganizerEvents(req, res) {
     }
 }
 
-// GET /api/events/participant/me
-// specific for Participants to see what they signed up for
+//get participant events
+//for participants to see what they signed up for
 export async function getParticipantEvents(req, res) {
     try {
         const events = await Event.find({
             "registered_participants.participant": req.user.id
         })
         .select('-registered_participants.payment_proof -attendance')
-        .populate("organizer_id", "email") //show who organized it
+        .populate("organizer_id", "email")
         .lean()
-        .sort({ start_date: 1 }); //show soonest events first
+        .sort({ start_date: 1 });
 
-        // Add registration details for each event
+        //add registration details for each event
         const eventsWithRegistration = events.map(event => {
             const registration = event.registered_participants.find(
                 rp => rp.participant.toString() === req.user.id
@@ -439,14 +439,14 @@ export async function getParticipantEvents(req, res) {
     }
 }
 
-// GET /api/events/:eventId/ticket
-// Get ticket details for a specific event registration
+//get event ticket
+//ticket details for specific event registration
 export async function getEventTicket(req, res) {
     try {
         const eventId = req.params.eventId;
         const userId = req.user.id;
 
-        // Optimized: Only select needed fields, use lean, and don't populate organizer details yet
+        //optimized: only select needed fields
         const event = await Event.findById(eventId)
             .select('name type start_date end_date organizer_id registered_participants')
             .populate("organizer_id", "email")
@@ -470,7 +470,7 @@ export async function getEventTicket(req, res) {
             });
         }
 
-        // For merchandise events, check payment approval before allowing ticket access
+        //for merchandise events check payment approval before ticket access
         if (event.type === 'merchandise') {
             if (registration.payment_status !== 'approved') {
                 return res.status(403).json({
@@ -481,7 +481,7 @@ export async function getEventTicket(req, res) {
             }
         }
 
-        // Import Participant model and get only needed fields
+        //import participant model and get only needed fields
         const { Participant } = await import('../models/user.js');
         const participant = await Participant.findById(userId)
             .select('first_name last_name email participant_type')
@@ -526,7 +526,7 @@ export async function getEventTicket(req, res) {
     }
 }
 
-// Update event (organizer only)
+//update event (organizer only)
 export async function updateEvent(req, res) {
     try {
         const eventId = req.params.id;
@@ -542,7 +542,7 @@ export async function updateEvent(req, res) {
             });
         }
 
-        // Check if organizer owns this event
+        //check if organizer owns this event
         if (event.organizer_id.toString() !== organizerId) {
             return res.status(403).json({
                 success: false,
@@ -550,7 +550,7 @@ export async function updateEvent(req, res) {
             });
         }
 
-        // Update allowed fields
+        //update allowed fields
         if (description) event.description = description;
         if (reg_deadline) event.reg_deadline = new Date(reg_deadline);
         if (reg_limit !== undefined) event.reg_limit = reg_limit;
@@ -572,16 +572,16 @@ export async function updateEvent(req, res) {
     }
 }
 
-// ========== TIER A FEATURE: QR Scanner & Attendance Tracking ==========
+//tier a: qr scanner and attendance tracking
 
-// POST /api/events/:id/scan-attendance
-// Scan QR code and mark attendance
+//scan attendance endpoint
+//scan qr and mark attendance
 export async function scanAttendance(req, res) {
     try {
         const eventId = req.params.id;
         const { participant_id, scan_method = 'qr_scan', notes } = req.body;
 
-        // Optimized: Only select fields needed for attendance marking
+        //optimized: only select needed fields
         const event = await Event.findById(eventId)
             .select('name type registered_participants attendance');
 
@@ -592,7 +592,7 @@ export async function scanAttendance(req, res) {
             });
         }
 
-        // Check if participant is registered
+        //check if participant is registered
         const registration = event.registered_participants.find(
             r => r.participant.toString() === participant_id
         );
@@ -604,7 +604,7 @@ export async function scanAttendance(req, res) {
             });
         }
 
-        // For merchandise events, check payment status
+        //for merchandise events check payment status
         if (event.type === 'merchandise' && registration.payment_status !== 'approved') {
             return res.status(400).json({
                 success: false,
@@ -612,7 +612,7 @@ export async function scanAttendance(req, res) {
             });
         }
 
-        // Check if already scanned
+        //check if already scanned
         const alreadyScanned = event.attendance.find(
             a => a.participant.toString() === participant_id
         );
@@ -627,7 +627,7 @@ export async function scanAttendance(req, res) {
             });
         }
 
-        // Mark attendance
+        //mark attendance
         event.attendance.push({
             participant: participant_id,
             scanned_by: req.user.id,
@@ -655,13 +655,12 @@ export async function scanAttendance(req, res) {
     }
 }
 
-// GET /api/events/:id/attendance
-// Get attendance list for an event
+//get attendance for event
 export async function getAttendance(req, res) {
     try {
         const eventId = req.params.id;
 
-        // Optimized: Select only needed fields and use lean
+        //optimized: select only needed fields
         const event = await Event.findById(eventId)
             .select('name registered_participants attendance')
             .populate('registered_participants.participant', 'first_name last_name email')
@@ -676,7 +675,7 @@ export async function getAttendance(req, res) {
             });
         }
 
-        // Create attendance report
+        //create attendance report
         const attendanceReport = event.registered_participants.map(reg => {
             const attendanceRecord = event.attendance.find(
                 a => a.participant._id.toString() === reg.participant._id.toString()
@@ -715,13 +714,12 @@ export async function getAttendance(req, res) {
     }
 }
 
-// GET /api/events/:id/attendance/export
-// Export attendance as CSV
+//export attendance as csv
 export async function exportAttendanceCSV(req, res) {
     try {
         const eventId = req.params.id;
 
-        // Optimized: Select only needed fields and use lean
+        //optimized: select only needed fields
         const event = await Event.findById(eventId)
             .select('name registered_participants attendance')
             .populate('registered_participants.participant', 'first_name last_name email contact_number')
@@ -735,7 +733,7 @@ export async function exportAttendanceCSV(req, res) {
             });
         }
 
-        // Create CSV data
+        //create csv data
         const csvRows = [];
         csvRows.push(['Name', 'Email', 'Contact', 'Registered At', 'Status', 'Scanned At'].join(','));
 
@@ -771,15 +769,15 @@ export async function exportAttendanceCSV(req, res) {
     }
 }
 
-// ========== TIER A FEATURE: Merchandise Payment Approval Workflow ==========
+//tier a: merchandise payment approval workflow
 
-// POST /api/events/:id/upload-payment-proof
-// Upload payment proof for merchandise order
+//upload payment proof
+//for merchandise orders
 export async function uploadPaymentProof(req, res) {
     try {
         const eventId = req.params.id;
         const participantId = req.user.id;
-        const { payment_proof } = req.body; // Base64 image or URL
+        const { payment_proof } = req.body;
 
         const event = await Event.findById(eventId);
         if (!event) {
@@ -796,7 +794,7 @@ export async function uploadPaymentProof(req, res) {
             });
         }
 
-        // Find registration
+        //find registration
         const registration = event.registered_participants.find(
             r => r.participant.toString() === participantId
         );
@@ -808,7 +806,7 @@ export async function uploadPaymentProof(req, res) {
             });
         }
 
-        // Update payment proof
+        //update payment proof
         registration.payment_proof = payment_proof;
         registration.payment_status = 'pending';
 
@@ -831,13 +829,13 @@ export async function uploadPaymentProof(req, res) {
     }
 }
 
-// GET /api/events/organizer/pending-payments
-// Get all pending payment approvals for organizer's events
+//get pending payments
+//all pending payment approvals for organizer events
 export async function getPendingPayments(req, res) {
     try {
         const organizerId = req.user.id;
 
-        // Optimized: Exclude payment_proof for instant list loading (1-5MB per image!)
+        //optimized: exclude payment_proof for instant list loading
         const events = await Event.find({
             organizer_id: organizerId,
             type: 'merchandise',
@@ -847,18 +845,18 @@ export async function getPendingPayments(req, res) {
         .populate('registered_participants.participant', 'first_name last_name email contact_number')
         .lean();
 
-        // Extract all pending payments WITHOUT payment proofs
+        //extract all pending payments without payment proofs
         const pendingPayments = [];
         
         events.forEach(event => {
             event.registered_participants.forEach(reg => {
                 if (reg.payment_status === 'pending') {
-                    // Calculate total price for all variant orders
+                    //calculate total price for all variants
                     let totalPrice = 0;
                     let variantOrdersDisplay = [];
                     
                     if (reg.variant_orders && reg.variant_orders.length > 0) {
-                        // New multi-variant format
+                        //new multi-variant format
                         reg.variant_orders.forEach(order => {
                             const variant = event.merchandise_details.variants.find(
                                 v => v.variant_name === order.variant_name
@@ -898,7 +896,7 @@ export async function getPendingPayments(req, res) {
                             contact: reg.participant.contact_number
                         },
                         variant_orders: variantOrdersDisplay,
-                        // Legacy fields for backward compatibility
+                        //legacy fields for backwards compatibility
                         variant_name: reg.variant_name,
                         quantity: reg.quantity,
                         total_price: totalPrice || event.reg_fee * (reg.quantity || 1),
@@ -924,8 +922,7 @@ export async function getPendingPayments(req, res) {
     }
 }
 
-// GET /api/events/:eventId/payment/:registrationId/proof
-// Get individual payment proof (fetched on-demand)
+//get individual payment proof (on-demand)
 export async function getPaymentProof(req, res) {
     try {
         const { eventId, registrationId } = req.params;
@@ -979,8 +976,7 @@ export async function getPaymentProof(req, res) {
     }
 }
 
-// PUT /api/events/:eventId/payment/:registrationId/approve
-// Approve payment
+//approve payment
 export async function approvePayment(req, res) {
     try {
         const { eventId, registrationId } = req.params;
@@ -1018,12 +1014,12 @@ export async function approvePayment(req, res) {
             });
         }
 
-        // Handle multiple variant orders or legacy single variant
+        //handle multiple variant orders or legacy single variant
         const variantOrders = registration.variant_orders && registration.variant_orders.length > 0
             ? registration.variant_orders
             : [{ variant_name: registration.variant_name, quantity: registration.quantity || 1 }];
 
-        // Check stock availability for all variants
+        //check stock availability for all variants
         for (const order of variantOrders) {
             const variant = event.merchandise_details.variants.find(
                 v => v.variant_name === order.variant_name
@@ -1044,7 +1040,7 @@ export async function approvePayment(req, res) {
             }
         }
 
-        // Decrement stock for all variants
+        //decrement stock for all variants
         let totalQuantity = 0;
         for (const order of variantOrders) {
             const variant = event.merchandise_details.variants.find(
@@ -1056,10 +1052,10 @@ export async function approvePayment(req, res) {
             }
         }
 
-        // Decrement total stock
+        //decrement total stock
         event.merchandise_details.stock_quantity -= totalQuantity;
 
-        // Update payment status
+        //update payment status
         registration.payment_status = 'approved';
         registration.payment_reviewed_at = new Date();
         registration.payment_reviewed_by = organizerId;
@@ -1085,8 +1081,7 @@ export async function approvePayment(req, res) {
     }
 }
 
-// PUT /api/events/:eventId/payment/:registrationId/reject
-// Reject payment
+//reject payment
 export async function rejectPayment(req, res) {
     try {
         const { eventId, registrationId } = req.params;

@@ -8,7 +8,7 @@ dotenv.config();
 //registration
 export async function registerParticipant (req, res) {
     try {
-        // Get data from request body
+        //get data from request body
         const { 
             first_name, 
             last_name, 
@@ -58,12 +58,12 @@ export async function registerParticipant (req, res) {
         }
 
         //password hash
-        // Hash the password
+        //hash the password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         
-        // Create new participant
+        //create new participant
         const participant = new Participant({
             first_name,
             last_name,
@@ -122,7 +122,7 @@ export async function loginParticipant (req, res) {
         }
 
 
-        //just returning success for now, NEED TO ADD 
+        //just returning success for now
         const token = jwt.sign({ id: participant._id, role: 'participant' }, process.env.JWT_SECRET);
 
         res.status(200).json({
@@ -216,7 +216,7 @@ export async function updateProfile(req, res) {
     }
 }
 
-// Follow a club/organizer
+//follow a club
 export async function followClub(req, res) {
     try {
         const participantId = req.user.id;
@@ -238,7 +238,7 @@ export async function followClub(req, res) {
             });
         }
 
-        // Check if already following
+        //check if already following
         if (participant.followed_clubs.includes(organizer_detail_id)) {
             return res.status(400).json({
                 success: false,
@@ -265,7 +265,7 @@ export async function followClub(req, res) {
 }
 
 
-// Unfollow a club/organizer
+//unfollow a club
 export async function unfollowClub(req, res) {
     try {
         const participantId = req.user.id;
@@ -287,7 +287,7 @@ export async function unfollowClub(req, res) {
             });
         }
 
-        // Remove from followed_clubs
+        //remove from followed clubs
         participant.followed_clubs = participant.followed_clubs.filter(
             id => id.toString() !== organizer_detail_id
         );
@@ -309,7 +309,7 @@ export async function unfollowClub(req, res) {
     }
 }
 
-// Change password
+//change password
 export async function changePassword(req, res) {
     try {
         const participantId = req.user.id;
@@ -338,7 +338,7 @@ export async function changePassword(req, res) {
             });
         }
 
-        // Verify current password
+        //verify password
         const isPasswordCorrect = await bcrypt.compare(currentPassword, participant.password);
         
         if (!isPasswordCorrect) {
@@ -348,7 +348,7 @@ export async function changePassword(req, res) {
             });
         }
 
-        // Hash new password
+        //hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         participant.password = hashedPassword;
         await participant.save();
@@ -367,12 +367,12 @@ export async function changePassword(req, res) {
     }
 }
 
-// Get follower count for an organizer
+//get follower count
 export async function getFollowerCount(req, res) {
     try {
         const organizerDetailId = req.params.organizerDetailId;
 
-        // Count participants who follow this organizer
+        //count followers
         const count = await Participant.countDocuments({
             followed_clubs: organizerDetailId
         });

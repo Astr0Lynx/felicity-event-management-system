@@ -37,7 +37,7 @@ export default function CreateEvent() {
     }));
   };
 
-  // Custom Form Field Management
+  //custom form field management
   const addCustomField = () => {
     setCustomFormFields([...customFormFields, {
       field_name: '',
@@ -70,7 +70,7 @@ export default function CreateEvent() {
     setCustomFormFields(updated);
   };
 
-  // Merchandise Management
+  //merchandise management
   const addVariant = () => {
     setMerchandiseDetails({
       ...merchandiseDetails,

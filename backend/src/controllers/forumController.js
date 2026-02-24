@@ -1,9 +1,8 @@
 import { Event } from '../models/user.js';
 
-// ========== TIER B FEATURE: Real-Time Discussion Forum ==========
+//discussion forum feature
 
-// POST /api/events/:id/forum/messages
-// Create a new message in the discussion forum
+//post message
 export async function postMessage(req, res) {
     try {
         const eventId = req.params.id;
@@ -26,7 +25,7 @@ export async function postMessage(req, res) {
             });
         }
 
-        // Check if user is registered or is the organizer
+        //check if registered or organizer
         const isOrganizer = event.organizer_id.toString() === userId;
         const isRegistered = event.registered_participants.some(
             rp => rp.participant && rp.participant.toString() === userId
@@ -39,7 +38,7 @@ export async function postMessage(req, res) {
             });
         }
 
-        // Only organizers can post announcements
+        //only organizers can post announcements
         if (is_announcement && !isOrganizer) {
             return res.status(403).json({
                 success: false,
@@ -47,12 +46,12 @@ export async function postMessage(req, res) {
             });
         }
 
-        // Initialize discussion_forum if it doesn't exist
+        //init forum if needed
         if (!event.discussion_forum) {
             event.discussion_forum = [];
         }
 
-        // Validate parent message if this is a reply
+        //validate parent msg if reply
         if (parent_message_id) {
             const parentExists = event.discussion_forum.some(
                 msg => msg.message_id.toString() === parent_message_id && !msg.deleted_at
@@ -65,7 +64,7 @@ export async function postMessage(req, res) {
             }
         }
 
-        // Create new message
+        //create new msg
         const newMessage = {
             author: userId,
             author_type: userRole === 'organizer' ? 'Organizer' : 'Participant',
@@ -78,10 +77,10 @@ export async function postMessage(req, res) {
         event.discussion_forum.push(newMessage);
         await event.save();
 
-        // Populate the author for the response
+        //populate author for response
         await event.populate('discussion_forum.author', 'first_name last_name email');
         
-        // Get the created message with populated author
+        //get created msg with author
         const savedMessage = event.discussion_forum[event.discussion_forum.length - 1];
 
         res.status(201).json({
@@ -99,8 +98,7 @@ export async function postMessage(req, res) {
     }
 }
 
-// GET /api/events/:id/forum/messages
-// Get all forum messages for an event
+//get forum messages
 export async function getMessages(req, res) {
     try {
         const eventId = req.params.id;
@@ -119,7 +117,7 @@ export async function getMessages(req, res) {
             });
         }
 
-        // Check if user has access (registered or organizer)
+        //check access
         const isOrganizer = event.organizer_id._id.toString() === userId;
         const isRegistered = event.registered_participants.some(
             rp => rp.participant && rp.participant.toString() === userId
@@ -132,14 +130,14 @@ export async function getMessages(req, res) {
             });
         }
 
-        // Filter out deleted messages and sort
+        //filter deleted msgs and sort
         const messages = (event.discussion_forum || [])
             .filter(msg => !msg.deleted_at)
             .sort((a, b) => {
-                // Pinned messages first
+                //pinned first
                 if (a.is_pinned && !b.is_pinned) return -1;
                 if (!a.is_pinned && b.is_pinned) return 1;
-                // Then by date (newest first for top-level, oldest first for replies)
+                //then by date
                 return new Date(b.posted_at) - new Date(a.posted_at);
             });
 
@@ -159,8 +157,7 @@ export async function getMessages(req, res) {
     }
 }
 
-// DELETE /api/events/:id/forum/messages/:messageId
-// Delete a message (organizer only - soft delete)
+//delete message (soft delete)
 export async function deleteMessage(req, res) {
     try {
         const { id: eventId, messageId } = req.params;
@@ -174,7 +171,7 @@ export async function deleteMessage(req, res) {
             });
         }
 
-        // Only organizer can delete messages
+        //only organizer can delete
         if (event.organizer_id.toString() !== userId) {
             return res.status(403).json({
                 success: false,
@@ -204,7 +201,7 @@ export async function deleteMessage(req, res) {
             });
         }
 
-        // Soft delete
+        //soft delete
         message.deleted_at = new Date();
         await event.save();
 
@@ -222,8 +219,7 @@ export async function deleteMessage(req, res) {
     }
 }
 
-// PUT /api/events/:id/forum/messages/:messageId/pin
-// Pin or unpin a message (organizer only)
+//pin or unpin msg
 export async function togglePinMessage(req, res) {
     try {
         const { id: eventId, messageId } = req.params;
@@ -237,7 +233,7 @@ export async function togglePinMessage(req, res) {
             });
         }
 
-        // Only organizer can pin messages
+        //only organizer can pin
         if (event.organizer_id.toString() !== userId) {
             return res.status(403).json({
                 success: false,
