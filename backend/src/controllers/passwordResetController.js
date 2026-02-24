@@ -118,19 +118,21 @@ export async function getAllResetRequests(req, res) {
             .sort({ createdAt: -1 })
             .lean();
 
-        const formattedRequests = requests.map(req => ({
-            request_id: req._id,
-            organizer_email: req.organizer_id.email,
-            club_name: req.organizer_id.organizer_details?.name || 'N/A',
-            club_category: req.organizer_id.organizer_details?.category || 'N/A',
-            reason: req.reason,
-            status: req.status,
-            requested_at: req.createdAt,
-            reviewed_by: req.reviewed_by?.email || null,
-            reviewed_at: req.reviewed_at,
-            admin_comment: req.admin_comment,
-            new_password: req.new_password  // Admin needs to see this to share with organizer
-        }));
+        const formattedRequests = requests
+            .filter(req => req.organizer_id) // Filter out requests with deleted organizers
+            .map(req => ({
+                request_id: req._id,
+                organizer_email: req.organizer_id.email,
+                club_name: req.organizer_id.organizer_details?.name || 'N/A',
+                club_category: req.organizer_id.organizer_details?.category || 'N/A',
+                reason: req.reason,
+                status: req.status,
+                requested_at: req.createdAt,
+                reviewed_by: req.reviewed_by?.email || null,
+                reviewed_at: req.reviewed_at,
+                admin_comment: req.admin_comment,
+                new_password: req.new_password  // Admin needs to see this to share with organizer
+            }));
 
         res.status(200).json({
             success: true,
