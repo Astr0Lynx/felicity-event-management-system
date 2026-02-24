@@ -143,7 +143,7 @@ export default function CreateEvent() {
 
       setLoading(true);
       const response = await api.post('/events', eventData);
-      setSuccess('Event created successfully as Draft! ✅ Redirecting...');
+      setSuccess('Event created successfully! ✅ Redirecting...');
       
       setTimeout(() => {
         navigate('/organizer/dashboard');
@@ -164,7 +164,7 @@ export default function CreateEvent() {
       <div style={styles.card}>
         <h1>Create New Event</h1>
         <p style={{ color: '#666', marginBottom: '30px' }}>
-          Fill in the details below. The event will be created as a Draft and can be published later.
+          Fill in the details below to create and publish your event.
         </p>
 
         {error && <div style={styles.error}>{error}</div>}
@@ -510,7 +510,7 @@ export default function CreateEvent() {
             }}
             disabled={loading}
           >
-            {loading ? 'Creating...' : 'Create Event (Draft)'}
+            {loading ? 'Creating...' : 'Create Event'}
           </button>
         </form>
       </div>
